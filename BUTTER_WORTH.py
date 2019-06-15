@@ -18,14 +18,14 @@ from math import log
 import matplotlib.pyplot as plt
 
 #%% Entradas
-f1 = 1e6
-f2 = 2e6
+f1 = 13e3
+f2 = 28e3
 
 w_1 = 2 * math.pi * f1
 w_2 = 2 * math.pi * f2
 
-Gdb1 = -0.45
-Gdb2 = -9
+Gdb1 = -0.5
+Gdb2 = -18
 
 #%%
 G1 = 10 ** (Gdb1/20)
@@ -38,25 +38,25 @@ aux_2 = 1/(G2 ** 2) - 1
 
 #%%
 n = 1/2 * ( log(aux_1/aux_2) / log(f1/f2) )
-n =  round(n)
+n =  math.ceil(n)
 
 w_0 = ( (w_1**(2*n))/aux_1 ) ** (1/(2*n))
 f0 = w_0 / (2*math.pi)
 
 #%%
-s = TransferFunction.s
+#s = TransferFunction.s
 
-aux = - s**2 / (4 * math.pi**2 * f0**2)
-aux = aux**n
+#aux = - s**2 / (4 * math.pi**2 * f0**2)
+#aux = aux**n
 #%%
-f = np.arange(1e4, 1e7, 10)
+f = np.arange(1e0, 1e5, 10)
 
 aux = f / f0
 aux = aux**(2*n)
 H = 1 / ( ( 1+aux )**(1/2) )
 
 plt.semilogx(f, H)
-plt.axis([1e5, 1e7, H.min()-0.1, H.max()+0.1])
+plt.axis([1e3, 1e5, H.min()-0.1, H.max()+0.1])
 plt.grid()
 plt.show()
 
@@ -64,30 +64,10 @@ plt.show()
 H_db = 20*np.log10(H)
 
 plt.semilogx(f, H_db)
-plt.axis([1e5, 1e7, H_db.min()-1, H_db.max()+1])
+plt.axis([1e3, 1e5, H_db.min()-1, H_db.max()+1])
 plt.grid()
 plt.show()
 
-#%%
-
-x = np.linspace(0, 2*np.pi, 1000)
-y1 = np.sin(x)
-
-f = plt.figure()
-
-ax = f.add_subplot(111)
-
-plt.plot(x, y1, '-b', label='sine')
-
-plt.axvline(x=np.pi,color='red')
-
-plt.title('Matplotlib Vertical Line')
-
-plt.xlim(0, 2.0*np.pi)
-plt.ylim(-1.5, 1.5)
-
-#plt.savefig('matplotlib_vertical_line.png', bbox_inches='tight')
-plt.show()
 #%%
 fig = plt.figure()
 
@@ -100,7 +80,28 @@ plt.axvline(x=f2, color='red', label='f2')
 
 #plt.xlim(1e5, 1e7)
 #plt.ylim(H.min()-0.1, H.max()+0.1)
-plt.axis([1e5, 1e7, H.min()-0.1, H.max()+0.1])
+plt.axis([1e3, 1e5, H.min()-0.1, H.max()+0.1])
 plt.grid()
 plt.legend()
 plt.show()
+
+#%%
+pk = np.ones(n,dtype = 'complex') 
+
+for i in range(1,n+1):
+    pk[i-1] = complex((w_0*math.cos(((n+2*(i)-1)*math.pi)/(2*n))),((w_0*math.sin(((n+2*(i)-1)*math.pi)/(2*n)))))
+pk[math.floor(n/2)] = 0;
+
+H = []
+
+denominadores = np.ones((math.floor(n/2),3),dtype='complex')
+numeradores = np.ones((math.floor(n/2), 1), dtype='complex')
+for i in range (0,math.floor(n/2)):
+    denominadores[i] = np.array([1, -pk[i]-pk[n-1-i], pk[i]*pk[n-1-i]])
+    numeradores[i] = np.array([pk[i]*pk[n-1-i]])
+    
+    sys = tf(numeradores[i], denominadores[i])
+    H.append(sys)
+
+C3 = 1.3e-9
+R3 = 1 / ( C3*2*math.pi*w_0 )
